@@ -31,7 +31,7 @@ function createSignatureMatrix(rows, current_genes) {
 
     clusterLabels = [];
 
-    var n=0;
+    var n = 0;
 
     for (var i = 0; i < nClusters; i++) {
         if ((rows[i]).visible & (rows[i]).checked) {
@@ -190,137 +190,23 @@ function main() {
     };
 
 
-    async function downloadSignatures(current_genes) {
-
+    async function runKDE(X, Y, Zgenes, genes, xmax, ymax, sigma, height, width, nStds = 3) {
 
         $.ajax({
             type: "POST",
-            url: "http://127.0.0.1:5000/genes",
+            url: "http://127.0.0.1:5000/KDE",
             contentType: "application/json",
-            data: JSON.stringify({ "genes": current_genes }),
+            data: JSON.stringify({ 'X': X, 'Y': Y, 'Zgenes': Zgenes, 'genes': genes, 'xmax': xmax, 'ymax': ymax, 'sigma': sigma, 'height': height, 'width': width, 'nStds': nStds }),
             dataType: "json",
             success: function (data) {
-                console.log('downloaded...');
-                current_genes;
-                signatureContent = (processDownloadedSignatures(data));
-                // console.log(signatureContent);
-                createTableHeader(current_genes, allTissues, allSpecies);
-                updateTable(signatureContent, allTissues, allSpecies);
-                [signatureMatrix, clusterLabels] = createSignatureMatrix(data, current_genes);
-                console.log(signatureMatrix);
+                vf=data[0];
+                vfNorm=data[1];
             },
             error: function (err) {
                 // console.log(err);
                 return (err);
             }
         });
-
-
-    }
-    function processDownloadedSignatures(data) {
-        allTissues = [];
-        allSpecies = [];
-        signatureContent = []
-
-        for (var i = 0; i < data.length; i++) {
-            entry = data[i];
-
-            [cellType, tissueType, species] = (data[i]).tissue.split('|');
-            // console.log(tissueType, allTissues)
-            if (!allTissues.includes(tissueType)) { allTissues.push(tissueType) };
-            if (!allSpecies.includes(species)) { allSpecies.push(species) };
-
-            entry.label = (data[i]).tissue;
-            entry.tissue = tissueType;
-            entry.celltype = cellType;
-            entry.species = species;
-            entry.checked = true;
-            entry.visible = true;
-            signatureContent.push(entry);
-        }
-
-        return signatureContent;
-    }
-
-    function createTableHeader(genes, tissues, species) {
-        var header = document.getElementById('sheet-header')
-        // row = header.insertRow(-1);
-        typeCell = header.insertCell(0);
-
-        typeCell = header.insertCell(1);
-        typeCell.innerHTML = "Cell Type";
-        typeCell.classList.add('header-cell');
-
-        tissueCell = header.insertCell(2);
-        tissueCell.innerHTML = "Tissue"
-        tissueCell.classList.add('header-cell');
-
-        var selTissue = document.createElement("select");
-        selTissue.id = "tissueSelect"
-        selTissue.classList.add('selectpicker')
-        selTissue.setAttribute('multiple', '');
-        selTissue.onchange = updateSignatureContent
-
-        for (var i = 0; i < tissues.length; i++) {
-            //Add the options
-            // console.log(selTissue);
-            selTissue.options[selTissue.options.length] = new Option(tissues[i]);
-        }
-        tissueCell.appendChild(selTissue);
-
-        speciesCell = header.insertCell(3);
-        speciesCell.innerHTML = "Species"
-        speciesCell.classList.add('header-cell');
-
-
-        var selSpecies = document.createElement("select");
-        selSpecies.id = "speciesSelect"
-        selSpecies.classList.add('selectpicker')
-        selSpecies.setAttribute('multiple', '');
-        selSpecies.onchange = updateSignatureContent
-
-        for (var i = 0; i < species.length; i++) {
-            //Add the options
-            // console.log(selSpecies);
-            selSpecies.options[selSpecies.options.length] = new Option(species[i]);
-        }
-        speciesCell.appendChild(selSpecies)
-
-        // console.log(genes);
-        for (var g = 0; g < genes.length; g++) {
-            cell = header.insertCell(g + 4);
-            cell.innerHTML = genes[g]
-            cell.classList.add('header-cell');
-            cell.classList.add('rotate');
-        }
-
-        $('select').selectpicker();
-        $("#tissueSelect").selectpicker('val', tissues[0])
-        $("#speciesSelect").selectpicker('val', species[0])
-
-    }
-
-
-    function updateSignatureContent(event) {
-        markedTissues = ($("#tissueSelect").val());
-        markedSpecies = ($("#speciesSelect").val());
-        if (markedTissues != null & markedSpecies != null ) {
-
-            for (var i = 0; i < signatureContent.length; i++) {
-                // console.log(signatureContent[i]);
-                if ((markedSpecies.includes((signatureContent[i]).species)) &
-                    (markedTissues.includes((signatureContent[i]).tissue))) {
-                    (signatureContent[i]).visible = true;
-                }
-                else {
-                    (signatureContent[i]).visible = false;
-                    (signatureContent[i]).checked = true;
-                }
-            }
-            updateTable(signatureContent);
-        
-        [signatureMatrix, clusterLabels] = createSignatureMatrix(signatureContent, genes)
-    }
     }
 
     function onlyUnique(value, index, self) {
@@ -340,7 +226,7 @@ function main() {
 
         // var current_genes = ZGenes.filter(onlyUnique);
 
-        downloadSignatures(genes);
+        // downloadSignatures(genes);
 
         edgeRatio = xmax / ymax;
         width = Math.ceil(height * edgeRatio);
@@ -350,14 +236,14 @@ function main() {
         });
     };
 
-    function runFullKDE() {
-        [vf, vfNorm] = runKDE(X, Y, ZGenes, genes, xmax, ymax, sigma, width, height);
+    async function runFullKDE() {
+        await  runKDE(X, Y, ZGenes, genes, xmax, ymax, sigma, width, height);
 
         plotVfNorm('vf-norm-preview', vfNorm.arraySync());
     };
 
     function runCelltypeAssignments() {
-        [signatureMatrix, clusterLabels] = createSignatureMatrix(signatureContent, genes);  
+        [signatureMatrix, clusterLabels] = createSignatureMatrix(signatureContent, genes);
         celltypeMap = assignCelltypes(vf, vfNorm, signatureMatrix, threshold);
         plotCelltypeMap('celltypes-preview', celltypeMap.arraySync(), clusterLabels, getClusterLabel);
 
