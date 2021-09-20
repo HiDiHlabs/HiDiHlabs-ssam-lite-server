@@ -31,7 +31,7 @@ function createSignatureMatrix(rows, current_genes) {
 
     clusterLabels = [];
 
-    var n=0;
+    var n = 0;
 
     for (var i = 0; i < nClusters; i++) {
         if ((rows[i]).visible & (rows[i]).checked) {
@@ -207,7 +207,7 @@ function main() {
                 createTableHeader(current_genes, allTissues, allSpecies);
                 updateTable(signatureContent, allTissues, allSpecies);
                 [signatureMatrix, clusterLabels] = createSignatureMatrix(data, current_genes);
-                console.log(signatureMatrix);
+                //console.log(signatureMatrix);
             },
             error: function (err) {
                 // console.log(err);
@@ -304,7 +304,7 @@ function main() {
     function updateSignatureContent(event) {
         markedTissues = ($("#tissueSelect").val());
         markedSpecies = ($("#speciesSelect").val());
-        if (markedTissues != null & markedSpecies != null ) {
+        if (markedTissues != null & markedSpecies != null) {
 
             for (var i = 0; i < signatureContent.length; i++) {
                 // console.log(signatureContent[i]);
@@ -318,9 +318,9 @@ function main() {
                 }
             }
             updateTable(signatureContent);
-        
-        [signatureMatrix, clusterLabels] = createSignatureMatrix(signatureContent, genes)
-    }
+
+            [signatureMatrix, clusterLabels] = createSignatureMatrix(signatureContent, genes)
+        }
     }
 
     function onlyUnique(value, index, self) {
@@ -351,17 +351,98 @@ function main() {
     };
 
     function runFullKDE() {
-        [vf, vfNorm] = runKDE(X, Y, ZGenes, genes, xmax, ymax, sigma, width, height);
+        //[vf, vfNorm] = runKDE(X, Y, ZGenes, genes, xmax, ymax, sigma, width, height);
+        runFullKDEviaPOST()
+        //console.log(X)
+        //plotVfNorm('vf-norm-preview', vfNorm.arraySync());
+    };
 
-        plotVfNorm('vf-norm-preview', vfNorm.arraySync());
+    function runFullKDEviaPOST() {
+        $(document).on({
+            ajaxStart: function(){
+                $("#vf-norm-load").show();
+                $("#vf-norm-preview").hide(); 
+            },
+            ajaxStop: function(){ 
+                $("#vf-norm-load").hide();
+                $("#vf-norm-preview").show();
+            }    
+        });
+        payload = JSON.stringify({
+            paramX: X,
+            paramY: Y,
+            paramZGenes: ZGenes,
+            paramGenes: genes,
+            paramXmax: xmax,
+            paramYmax: ymax,
+            paramSigma: sigma,
+            paramWidth: width,
+            paramHeight: height
+        });
+        //console.log(payload);
+
+        $.ajax({
+            type: "POST",
+            url: "/runKDE",
+            contentType: "application/json",
+            data: payload,
+            dataType: "json",
+            success: function (response) {
+                vfNorm=response.vfNorm;
+                vf=response.vfBuffer;
+                plotVfNorm('vf-norm-preview', tf.tensor(vfNorm).arraySync());
+                console.log(response.vfNorm);
+            },
+            error: function (err) {
+                console.log(err);
+            }
+        });
+        
     };
 
     function runCelltypeAssignments() {
-        [signatureMatrix, clusterLabels] = createSignatureMatrix(signatureContent, genes);  
-        celltypeMap = assignCelltypes(vf, vfNorm, signatureMatrix, threshold);
+        [signatureMatrix, clusterLabels] = createSignatureMatrix(signatureContent, genes);
+        celltypeMap = assignCelltypes(tf.tensor(vf), tf.tensor(vfNorm), signatureMatrix, threshold);
+        assignCelltypesviaPOST(vf, vfNorm, signatureMatrix, threshold)
         plotCelltypeMap('celltypes-preview', celltypeMap.arraySync(), clusterLabels, getClusterLabel);
 
     };
+
+    function assignCelltypesviaPOST(vf, vfNorm, signatureMatrix, threshold){
+        // $(document).on({
+        //     ajaxStart: function(){
+        //         $("#vf-norm-load").show();
+        //         $("#vf-norm-preview").hide(); 
+        //     },
+        //     ajaxStop: function(){ 
+        //         $("#vf-norm-load").hide();
+        //         $("#vf-norm-preview").show();
+        //     }    
+        // });
+        payload = JSON.stringify({
+            paramVF: vf,
+            paramVFNorm: vfNorm,
+            paramZSigMat: signatureMatrix,
+            paramthreshold: threshold,
+        });
+        //console.log(payload);
+
+        $.ajax({
+            type: "POST",
+            url: "/assignCelltypes",
+            contentType: "application/json",
+            data: payload,
+            dataType: "json",
+            success: function (response) {
+                celltypeMap=tf.tensor(response.vfNorm);
+                //plotCelltypeMap('celltypes-preview', celltypeMap.arraySync(), clusterLabels, getClusterLabel);
+                console.log(response.celltypeMap);
+            },
+            error: function (err) {
+                console.log(err);
+            }
+        });
+    }
 
     function updateVfShape() {
         height = parseInt(document.getElementById('vf-width').value);
