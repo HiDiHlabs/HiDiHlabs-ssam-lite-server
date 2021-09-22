@@ -12,13 +12,13 @@ Author: Sebastian Tiesmeyer (sebastian.tiesmeyer@bih-charite.de)<sup>1</sup>
 
 ## Choose your flavour
 
-You might also want to check out the [SSAM-lite-solo](https://github.com/HiDiHlabs/ssam-lite-solo) implementation.
+You might also want to check out the [SSAM-lite-solo](https://github.com/HiDiHlabs/ssam-lite) implementation.
 
 For a guide to help you choose read https://ssam-lite.readthedocs.io/en/latest/solo_vs_server.html
 
 ## Installation
 
-https://ssam-lite.readthedocs.io/en/latest/installation.html
+https://ssam-lite.readthedocs.io/en/latest/installation.html#ssam-lite-server
 
 
 ## Documentation
