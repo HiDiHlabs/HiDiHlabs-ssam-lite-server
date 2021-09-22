@@ -18,7 +18,7 @@ For a guide to help you choose read https://ssam-lite.readthedocs.io/en/latest/s
 
 ## Installation
 
-https://ssam-lite.readthedocs.io/en/latest/installation.html
+https://ssam-lite.readthedocs.io/en/latest/installation.html#ssam-lite-server
 
 
 ## Documentation
