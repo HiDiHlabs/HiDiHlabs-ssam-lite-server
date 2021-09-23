@@ -12,9 +12,9 @@ Author: Sebastian Tiesmeyer (sebastian.tiesmeyer@bih-charite.de)<sup>1</sup>
 
 ## Choose your flavour
 
-You might also want to check out the [SSAM-lite-solo](https://github.com/HiDiHlabs/ssam-lite) implementation.
+You might also want to check out the [SSAM-lite](https://github.com/HiDiHlabs/ssam-lite) implementation.
 
-For a guide to help you choose read https://ssam-lite.readthedocs.io/en/latest/solo_vs_server.html
+For a guide to help you choose read https://ssam-lite.readthedocs.io/en/latest/local_vs_server.html
 
 ## Installation
 
@@ -40,7 +40,7 @@ Sebastian Tiesmeyer, Shashwat Sahay, Niklas Mueller-Boetticher, Roland Eils, Seb
 
 MIT License
 
-Copyright (c) 2021 Sebastian Tiesmeyer
+Copyright (c) 2021 Sebastian Tiesmeyer, Naveed Ishaque, Roland Eils, Berlin Institute of Health @ Charité
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
