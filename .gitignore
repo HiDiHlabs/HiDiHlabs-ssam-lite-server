@@ -9,7 +9,10 @@ __pycache__/
 # Distribution / packaging
 .Python
 build/
+<<<<<<< HEAD
 resources/
+=======
+>>>>>>> dbd301de293521a094b6f67a9caac22f382d871c
 develop-eggs/
 downloads/
 eggs/
@@ -19,7 +22,10 @@ lib64/
 parts/
 sdist/
 var/
+<<<<<<< HEAD
 pkgs/
+=======
+>>>>>>> dbd301de293521a094b6f67a9caac22f382d871c
 wheels/
 pip-wheel-metadata/
 share/python-wheels/
@@ -27,9 +33,13 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+<<<<<<< HEAD
 app/data/genetics/*
 app/static/pkgs/*
 
+=======
+data/
+>>>>>>> dbd301de293521a094b6f67a9caac22f382d871c
 # PyInstaller
 #  Usually these files are written by a python script from a template
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
