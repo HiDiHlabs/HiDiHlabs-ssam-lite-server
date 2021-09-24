@@ -2,12 +2,14 @@ import os
 import pathlib
 import urllib.request
 base_path=pathlib.Path(__file__).parent.absolute()
+data_directory=pathlib.PurePath(base_path, "app", "data", "genetics")
 js_directory=pathlib.PurePath(base_path, "app", "static", "pkgs", "js")
 bootstrap_directory=pathlib.PurePath(base_path, "app", "static", "pkgs", "bootstrap")
 
 # create directories if they don't exist
 pathlib.Path(js_directory).mkdir(parents=True, exist_ok=True)
 pathlib.Path(bootstrap_directory).mkdir(parents=True, exist_ok=True)
+pathlib.Path(data_directory).mkdir(parents=True, exist_ok=True)
 
 urllib.request.urlretrieve("https://code.jquery.com/jquery-3.4.1.min.js", pathlib.PurePath(js_directory,"jquery-3.4.1.min.js" ))
 urllib.request.urlretrieve("https://unpkg.com/@popperjs/core@2.10.1/dist/umd/popper.min.js", pathlib.PurePath(js_directory,"popper.min.js" ))

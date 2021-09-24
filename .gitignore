@@ -27,7 +27,7 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
-data/
+data/genetics/*
 app/static/pkgs/*
 
 # PyInstaller

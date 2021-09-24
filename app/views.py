@@ -3,8 +3,9 @@ from flask import render_template, make_response, jsonify, request
 import pandas as pd
 import numpy as np
 import json
+import pathlib
 
-sheet = pd.read_csv('../../data/genetics/new_sheet.csv')
+sheet = pd.read_csv(pathlib.PurePath(app.root_path,'data', 'genetics', 'new_sheet.csv'))
 
 @app.route("/")
 def index():

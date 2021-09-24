@@ -130,8 +130,11 @@ function processCoordinates(allText) {
     return [X, Y, ZGenes, allGenes, xmax, ymax, edgeRatio, width, height];
 };
 
-
-
+function reloadPage() {
+    window.scrollTo(0, 0);
+    // document.getElementById('btn-coordinates-hidden').scrollIntoView();
+    location.reload();
+};
 function main() {
 
     {
@@ -571,6 +574,8 @@ function main() {
             .addEventListener('change', updateThreshold);
         document.getElementById('button-tutorial')
             .addEventListener('click', runTutorial);
+        document.getElementById('btn-reload')
+            .addEventListener('click', reloadPage);
 
     };
 

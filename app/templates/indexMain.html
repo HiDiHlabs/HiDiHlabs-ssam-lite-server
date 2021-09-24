@@ -502,89 +502,102 @@
         </div>
 
 
-        <!-- download section -->
-        <div id="wrapper-download">
-            <div id="section-download" class="row" style="height:30vh"></div>
+        <!-- reload option -->
+        <div id="wrapper-reload">
+            <div id="section-reload" class="row" style="height:30vh"></div>
             <div class="section-main-space, row, container-fluid" , style="height:20vh;">
 
-                <h1 class="cover-heading">Download</h1>
+                <div id="btn-reload" class="btn btn-lg btn-secondary">
 
+                    Clear analysis
+
+                </div>
             </div>
         </div>
 
 
         <!-- about section -->
         <div id="wrapper-about">
-            <div id="section-about" class="row" style="height:30vh"></div>
+            <div id="section-about" class="row" style="height:5vh"></div>
             <div class="section-main-space, row, container-fluid" , style="height:20vh;">
 
                 <h1 class="cover-heading">About</h1>
 
                 <div class="d-flex flex-column">
-                    <div style="text-align: center; padding: 20px;">
+                    <div style="text-align: center; padding-top: 40px; padding-bottom: 15px;">
                         The SSAM framework was conceived by Dr. Jeongbin Park
-                        as part of his PhD project at the Berlin Institute of Heath.
+                        as part of his PhD project at the Berlin Institute of Health.
+                        Read the original <a href="https://www.nature.com/articles/s41467-021-23807-4" target="_blank" rel="noopener noreferrer"><u>SSAM publication</u></a> 
+                        to learn more about the methods.
                     </div>
-                    <div class="d-flex flex-row  justify-content-around" style="background-color: white; padding: 20px;    border-radius: 20px;
-                    ">
+                    <div style="text-align: center; padding: 15px;">
+                        SSAM-lite has been designed and implemented by Seastian Tiesmeyer at the Berlin Institute of Health.
+                        Learn more about SSAM-lite <a href="https://www.biorxiv.org/" target="_blank" rel="noopener noreferrer"><u>here</u></a>. <!-- TODO update Link. -->
+                    </div>
+                    <div style="text-align: center; padding: 15px;">
+                        For a comprehensive documentation of the SSAM-lite tool check out our 
+                        <a href="https://ssam-lite.readthedocs.io" target="_blank" rel="noopener noreferrer"><u>Read the Docs page</u></a>.
+                    </div>
+                    <div style="text-align: center; padding-top: 15px; padding-bottom: 5px;">
+                        If you are using SSAM-lite for your research please cite:
+                    </div>
+                    <div style="text-align: center; padding-top: 5px; padding-bottom: 50px;">
+                        Tiesmeyer S, et al. 2021. SSAM-lite. <i>bioRxiv</i>. doi: 10.1101/2021.... <!-- TODO update citation -->
+                    </div>
+                    
+
+                    <div class="d-flex flex-row  justify-content-around" style="background-color: white; padding: 20px;    border-radius: 20px;">
                         <div class="d-flex">
                             <a href="https://www.charite.de/" target="_blank" rel="noopener noreferrer">
-                                <img src="{{ url_for('static', filename='img/Logo_Charite.svg.png')}}"
+                                <img src="{{ url_for('static', filename='img/Logo_Charite.svg.png') }}"
                                     style="height: 40px; width: auto; padding: 5px;">
                             </a>
                         </div>
                         <div class="d-flex">
                             <a href="http://www.bihealth.org" target="_blank" rel="noopener noreferrer">
-                                <img src="{{ url_for('static', filename='img/logo_bihealth_en.png')}}"
+                                <img src="{{ url_for('static', filename='img/logo_bihealth_en.png') }}"
                                     style="height: 40px; width: auto; padding: 5px;">
                             </a>
                         </div>
 
 
                         <div class="d-flex">
-                            <a href="https://www.biorxiv.org/content/10.1101/800748v2" target="_blank"
+                            <a href="https://www.biorxiv.org/content/10.1101/800748v2" target="_blank" 
                                 rel="noopener noreferrer">
-                                <img src="{{ url_for('static', filename='img/logo_biorxiv.png')}}"
+                                <img src="{{ url_for('static', filename='img/logo_biorxiv.png') }}"
+                                    style="height: 40px; width: auto; padding: 5px;">
+                            </a> <!-- TODO update Link. -->
+                        </div>
+
+                        <div class="d-flex">
+                            <a href="https://github.com/HiDiHlabs/ssam-lite" target="_blank" rel="noopener noreferrer">
+                                <img src="{{ url_for('static', filename='img/GitHub-Mark.png') }}"
                                     style="height: 40px; width: auto; padding: 5px;">
                             </a>
                         </div>
 
                         <div class="d-flex">
-                            <a href="https://github.com/HiDiHlabs/ssam" target="_blank" rel="noopener noreferrer">
-                                <img src="{{ url_for('static', filename='img/GitHub-Mark.png')}}"
-                                    style="height: 40px; width: auto; padding: 5px;">
-                            </a>
-                        </div>
-
-                        <div class="d-flex">
-                            <a href="https://www.dkfz.de/en/bioinformatik-genomik-systemgenetik/members.html"
+                            <a href="https://www.dkfz.de/"
                                 target="_blank" rel="noopener noreferrer">
-                                <img src="{{ url_for('static', filename='img/dkfz-logo.png')}}"
+                                <img src="{{ url_for('static', filename='img/dkfz-logo.png') }}"
                                     style="height: 40px; width: auto; padding: 5px;">
                             </a>
                         </div>
                     </div>
-                    <div style="color: gray; padding: 5px;">
+                    <div style="color: gray; padding: 30px;">
                         Designed and implemented by Sebastian Tiesmeyer, BIH.
                     </div>
                 </div>
             </div>
         </div>
 
-
     </main>
 
     <!-- importing external scripts here: -->
-    <!-- <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
-        integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN"
-        crossorigin="anonymous"></script> -->
-
-    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-multiselect/0.9.13/js/bootstrap-multiselect.js"></script> -->
-    {{ url_for('static', filename='pkgs/bootstrap/jquery.min.js') }}
+   
     <script src="{{ url_for('static', filename='pkgs/js/popper.min.js') }}"></script>
 
-    <!-- <script src="{{ url_for('static', filename='pkgs/bootstrap-4.0.0//dist/js/bootstrap.min.js') }}"></script> -->
-    <!-- <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css"> -->
+
     <link rel="stylesheet"
         href="{{ url_for('static', filename='pkgs/bootstrap/bootstrap-select.css') }}" />
     <link rel="stylesheet"
@@ -596,7 +609,7 @@
     <script src="{{ url_for('static', filename='pkgs/js/bootstrap-select.min.js') }}"></script>
 
     <script src="{{ url_for('static', filename='pkgs/js/tf.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='pkgs/js/plotly-latest.min.js'') }}) }}"></script>
+    <script src="{{ url_for('static', filename='pkgs/js/plotly-latest.min.js') }}"></script>
 
 
     <script src="{{ url_for('static', filename='js/model.js') }}"></script>
