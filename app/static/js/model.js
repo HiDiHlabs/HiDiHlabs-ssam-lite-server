@@ -1,15 +1,16 @@
-function runKDE(X, Y, Zgenes, genes, xmax, ymax, sigma, height, width, nStds=3) {
+function runKDE(X, Y, Zgenes, genes, xmax, ymax, sigma, height, width, nStds=2) {
 
+    console.log([height, width, genes.length]);
     var vfBuffer = tf.buffer([height, width, genes.length]);
-    var test=tf.buffer([3,3,3])
-    console.log(test);
-    console.log(vfBuffer);
+
     var x = 0;
     var y = 0;
     var z = 0;
     var val = 0;
     var counter = 0;
     var n_steps = Math.ceil(sigma*nStds);
+
+    console.log(sigma,n_steps);
 
     var normalization = 1/(1*Math.PI*sigma**2)**0.5
 
@@ -39,16 +40,21 @@ function runKDE(X, Y, Zgenes, genes, xmax, ymax, sigma, height, width, nStds=3) 
 
         }
 
-        else {
-            console.log(Zgenes[i], i, z);
-        }
+        // else {
+        //     // console.log(Zgenes[i], i, z);
+        // }
 
 
     }
 
-    vf = vfBuffer.toTensor();
+    try{
+        vf = vfBuffer.toTensor();
+    }
+    catch{
+        throw ("Exceeded");
+    }
+   
     vfNorm = vf.sum(2);
-    console.log(vfNorm);
 
     return [vf, vfNorm];
 
@@ -61,6 +67,7 @@ function assignCelltypes(vf, vfNorm, signatureMatrix, threshold) {
         var inter;
 
         for (var i = 0; i < vf.shape[0]; i++) {
+
             inter = vf.gather(i);
             inter = inter.add(1).log();
             inter = inter.transpose().div(inter.sum(1)).transpose();

@@ -20,8 +20,10 @@ async function plotCoordinates(div, X, Y, ZGenes, layoutCoordinates = {}) {
             paper_bgcolor: 'rgba(0,0,0,0.4)',
             plot_bgcolor: 'rgba(0,0,0,1)',
             'title': 'mRNA map',
-            'showlegend': true,
-            'margin': { 'l': 10, 'r': 0, 't': 0, 'b': 15 },
+            'margin': { 'l': 20, 'r': 0, 't': 0, 'b': 15 },
+            font: { color: '#dddddd' },
+            xaxis: { title: 'μm' },
+            yaxis: { scaleanchor: "x", },
         }, ...layoutCoordinates
     };
 
@@ -45,7 +47,9 @@ async function plotCoordinates(div, X, Y, ZGenes, layoutCoordinates = {}) {
         });
     }
 
-    Plotly.plot(div, data, layoutCoordinates);
+    Plotly.newPlot(div, data, layoutCoordinates);
+    document.getElementById('divScale').style.display = 'block';
+
 };
 
 async function plotSignatures(div, genes, clusterLabels, signatureMatrix) {
@@ -79,8 +83,98 @@ async function plotSignatures(div, genes, clusterLabels, signatureMatrix) {
     }
 
 
-    Plotly.newPlot(div, data, layout_signatures, { responsive: true });
+    Plotly.react(div, data, layout_signatures, { responsive: true });
 };
+
+function generateScalebar(start = 30, end = 120, umPerPx = 1) {
+
+    linestyle = {
+        color: 'rgba(255, 255, 255, 1)',
+        width: 2
+    };
+
+
+    var length = (end - start) * umPerPx;
+    var decimals = Math.ceil(Math.log10(length)) - 1;
+    var inter = length / (Math.pow(10, decimals));
+
+    var lengthRound = Math.ceil(inter) * Math.pow(10, decimals);
+
+    console.log(length, decimals, inter, lengthRound);
+
+    end = start + lengthRound / umPerPx
+
+    text = lengthRound + " μm";
+
+    layout = {
+        // text
+        annotations: [{
+            showarrow: false,
+            text: '<b>' + text + '</b>',
+            align: "center",
+            yref: 'paper',
+            x: (start + end) / 2,
+            xanchor: "center",
+            y: 0.05,
+            yanchor: "bottom",
+            font: {
+                size: 13,
+            }
+        },],
+        shapes: [
+            //Surrounding box Rectangle
+            {
+                type: 'rect',
+                yref: 'paper',
+                x0: start - 10,
+                y0: 0.012,
+                x1: end + 10,
+                y1: 0.06,
+                fillcolor: 'rgba(0,0,0,0.6)',
+                line: {
+                    color: 'rgba(255, 255, 255, 1)',
+                    width: 1.2
+                },
+            },
+            //horizontal line
+            {
+                type: 'line',
+                yref: 'paper',
+                x0: start,
+                y0: 0.03,
+                x1: end,
+                y1: 0.03,
+                // fillcolor: 'rgba(255,255,255,1)',
+                line: linestyle,
+            },
+            {
+                //caps
+                type: 'line',
+                yref: 'paper',
+                x0: start,
+                y0: 0.02,
+                x1: start,
+                y1: 0.04,
+                // fillcolor: 'rgba(0,0,0,0.6)',
+                line: linestyle
+            },
+            {
+                type: 'line',
+                yref: 'paper',
+                x0: end,
+                y0: 0.02,
+                x1: end,
+                y1: 0.04,
+                fillcolor: 'rgba(0,0,0,0.6)',
+                line: linestyle
+            },
+
+        ]
+
+    }
+
+    return layout;
+}
 
 function plotVfNorm(div, vfNorm, layout = {}) {
 
@@ -90,21 +184,31 @@ function plotVfNorm(div, vfNorm, layout = {}) {
             type: 'heatmapgl',
             colorscale: 'Viridis',
             'showgrid': false,
-        }
-    ];
-    var layoutVfNorm = {                     // all "layout" attributes: #layout
-        paper_bgcolor: 'rgba(0,0,0,0.7)',
-        plot_bgcolor: 'rgba(0,0,0,0)',
-        showlegend: false,
-        showscale: false,
-        'font': {
-            color: 'white',
         },
-        'title': 'generated vector field norm:',
-        // 'margin': { 'l': 10, 'r': 0, 't': 0, 'b': 15 },
-    };
 
-    Plotly.plot(div, data, layoutVfNorm);
+    ];
+
+    var layoutVfNorm = {
+        ...{                  // all "layout" attributes: #layout
+            paper_bgcolor: 'rgba(0,0,0,0.7)',
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            showlegend: false,
+            showscale: true,
+            'font': {
+                color: 'white',
+            },
+            'title': 'generated vector field norm:',
+
+            'xaxis': { title: 'px' },
+            'yaxis': { scaleanchor: "x", title: 'px' },
+
+            'showlegend': false,
+
+        },
+        ...layout
+    }
+
+    Plotly.newPlot(div, data, layoutVfNorm, { editable: true });
 
 };
 
@@ -140,21 +244,37 @@ function createColorMap(nColors) {
     return [colorMap, tickvals]
 };
 
-function plotCelltypeMap(div, celltypeMap, clusterLabels, getClusterLabel = null) {
+function checkForExistingPlot(div) {
+    return (document.getElementById(div).getElementsByClassName('plot-container').length > 0);
+}
+
+function printErr(div, id, msg) {
+    err = document.createElement('div', { role: "alert" })
+    err.id = id;
+    err.className = "alert alert-warning";
+    err.innerHTML = (msg);
+    $(div).append(err)
+}
+
+function plotCelltypeMap(div, celltypeMap, clusterLabels, getClusterLabel = null, layout = {}) {
 
     [colorMap, tickVals] = createColorMap(clusterLabels.length);
 
     var tickText = ['ECM'].concat(clusterLabels)
 
     var layout = {
-        paper_bgcolor: 'rgba(0,0,0,0.7)',
-        plot_bgcolor: 'rgba(0,0,0,0)',
-        showlegend: false,
-        showscale: false,
-        'font': {
-            color: 'white',
-        },
-        'title': 'generated vector field norm:'
+        ...{
+            paper_bgcolor: 'rgba(0,0,0,0.7)',
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            showlegend: false,
+            showscale: false,
+            'font': {
+                color: 'white',
+            },
+            'title': 'generated tissue map:',
+            'xaxis': {},
+            'yaxis': { scaleanchor: "x", },
+        }, ...layout
     }
 
     var data = [
@@ -173,9 +293,25 @@ function plotCelltypeMap(div, celltypeMap, clusterLabels, getClusterLabel = null
                 ticktext: tickText,
 
             }
-        }
+        },
+        // {
+
+        //     x: [0, 1, 2],
+        //     y: [3, 3, 3],
+        //     mode: 'lines+text',
+        //     name: 'Lines and Text',
+        //     text: ['Text G', 'Text H', 'Text I'],
+        //     textposition: 'bottom',
+        //     type: 'scatter'
+        // }
     ];
-    Plotly.plot(div, data, layout, { responsive: true });
+    // console.log(document.getElementById(div),checkForExistingPlot(div));
+    // if (!checkForExistingPlot(div)) {
+    Plotly.react(div, data, layout, { responsive: true });
+    // }else{
+    //     console.log('updating...');
+    //     Plotly.update(div, data, layout, { responsive: true });
+    // }
 
     if (getClusterLabel != null) {
         var hoverInfo = document.getElementById('hoverinfo');
@@ -214,9 +350,9 @@ function plotCelltypeMap(div, celltypeMap, clusterLabels, getClusterLabel = null
 };
 
 function displayParameterGenerator() {
-    var previewGenerator = document.getElementById('preview-generator');
+    
     var buttonParameters = document.getElementById('bar-parameters');
-
+var previewGenerator = document.getElementById('preview-generator');
     previewGenerator.style.display = "block";
     buttonParameters.innerHTML = 'Close preview generator';
 }
@@ -228,6 +364,18 @@ function hideParameterGenerator() {
     previewGenerator.style.display = "none";
     buttonParameters.innerHTML = 'Use preview generator for parameter search';
 }
+
+function refreshParameterGenerator() {
+    var previewGenerator = document.getElementById('preview-generator');
+    if (previewGenerator.style.display == "block"){
+        var buttonParameters = document.getElementById('bar-parameters');
+        previewGenerator.style.display = "block";
+        buttonParameters.innerHTML = 'Refresh preview generator';
+    }
+
+}
+
+
 
 function updateParameterRectangle(clickCoords, rectWidth) {
     // update_layout_parameters(rect_center = clickCoords);
@@ -250,69 +398,16 @@ function updateParameterRectangle(clickCoords, rectWidth) {
     Plotly.relayout('parameter-coordinates', update)
 };
 
+function setVfSizeIndicator(width, height, genes) {
 
+    var sizeIndicator;
 
-
-
-
-
-function updateTable(rows, allTissues, allSpecies) {
-    const table = document.getElementById('marker-body');
-    table.innerHTML=''; 
-    
-    
-
-    var pos_y = 0;
-
-    for (var r = 0; r < rows.length; r++) {
-
-        if ((rows[r]).visible) {
-            row = table.insertRow(-1);
-            row.id = (rows[r]).label
-            // [cellType,tissueType,species] = (rows[r]).tissue.split('|');
-
-            cellType = (rows[r]).celltype;
-            tissueType = (rows[r]).tissue;
-            species = (rows[r]).species;
-            // console.log(rows[r]);
-            if (r == 0) {
-                var topTissue = tissueType;
-                var topSpecies = species;
-            }
-
-            tickCell = row.insertCell(-1);
-            var x = document.createElement("INPUT");
-            x.setAttribute("type", "checkbox");
-            x.checked = true;
-            tickCell.appendChild(x);
-
-            cellTypeCell = row.insertCell(-1);
-
-            // checked = (tissueType==topTissue && species==topSpecies )? 'checked' : ' ';
-            cellTypeCell.innerHTML += (cellType);
-            cellTypeCell.classList.add('tissue-cell');
-
-            var tissueCell = row.insertCell(-1);
-            // checked = (tissueType==topTissue)? 'checked' : ' ';
-            tissueCell.innerHTML += (tissueType);
-            tissueCell.classList.add('tissue-cell');
-
-            speciesCell = row.insertCell(-1);
-            // checked = (species==topSpecies )? 'checked' : ' ';
-            speciesCell.innerHTML += (species);
-            speciesCell.classList.add('tissue-cell');
-
-            var expressions = ((rows[r]).expressions);
-
-            for (var e = 0; e < expressions.length; e++) {
-                cell = row.insertCell(e + 4);
-                exp = expressions[e];
-                cell.style.backgroundColor = 'rgba(' + [40, 255, 50, exp].join(',') + ')';
-            }
-            pos_y++;
-        }
+    if (width == 0 || height == 0 || genes.length == 0) {
+        size = ' - ';
+    } else {
+        size = (width * height * genes.length * 32 / 2 ** 30).toFixed(1) + " gB";
     }
 
-
-
-}
+    document.getElementById("vf-size-information").innerHTML =
+        "total size: (" + width + "," + height + "," + genes.length + "); " + size;
+};

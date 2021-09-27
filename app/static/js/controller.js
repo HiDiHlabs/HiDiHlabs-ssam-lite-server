@@ -13,46 +13,9 @@ function readFileAsync(file) {
     })
 };
 
-function createSignatureMatrix(rows, current_genes) {
 
-    // console.log(rows);
-    // genes = current_genes;
-    var nGenes = current_genes.length;
-    var nClusters = rows.length;
-    var nChecked = 0;
-
-    for (var i = 0; i < nClusters; i++) {
-        nChecked += ((rows[i]).visible & (rows[i]).checked)
-    }
-
-    console.log(nChecked);
-
-    signatureBuffer = tf.buffer([nChecked, nGenes]);
-
-    clusterLabels = [];
-
-    var n = 0;
-
-    for (var i = 0; i < nClusters; i++) {
-        if ((rows[i]).visible & (rows[i]).checked) {
-            line = ((rows[i]).expressions)
-
-            for (var j = 0; j < nGenes; j++) {
-                signatureBuffer.set(parseFloat(line[j]), n, j);
-            }
-            n++;
-            clusterLabels.push(((rows[i]).celltype));
-        }
-    }
-    signatureBuffer = signatureBuffer.toTensor();
-
-    return [signatureBuffer, clusterLabels];
-
-};
 
 function processSignatures(allText) {
-
-    console.log('...loading...');
 
     var genes;
     var clusterLabels;
@@ -80,24 +43,15 @@ function processSignatures(allText) {
     signatureBuffer = signatureBuffer.toTensor();
 
     return [signatureBuffer, clusterLabels, genes];
-
 };
 
 function processCoordinates(allText) {
-
-    // var t0 = performance.now()
     var allTextLines = allText.split(/\r\n|\n/);
 
-    var len = allTextLines.length;
-    ZGenes = Array(len);
-    X = Array(len);
-    Y = Array(len);
-
-    allGenes = [];
-
-    // ZGenes = []; //Array(len);
-    // X = [];//Array(len);
-    // Y = []//Array(len);
+    genes = [];
+    ZGenes = [];
+    X = [];
+    Y = [];
     var x = 0;
     var y = 0;
     var line;
@@ -113,21 +67,17 @@ function processCoordinates(allText) {
         xmax = Math.max(x, xmax);
         ymax = Math.max(y, ymax);
 
-        X[i] = x;//.push(x);
-        Y[i] = y;//.push(y);
-        ZGenes[i] = line[0];//.push(line[0]);
-
-        if (!allGenes.includes(line[0])) {
-            allGenes.push(line[0]);
-        };
+        X.push(x);
+        Y.push(y);
+        ZGenes.push(line[0]);
+        if (!genes.includes(line[0])) genes.push(line[0]);
     }
-    // console.log(performance.now() -t0);
 
     var edgeRatio = Math.ceil(xmax / ymax);
     var width = Math.ceil(500);
     var height = Math.ceil(width / edgeRatio);
 
-    return [X, Y, ZGenes, allGenes, xmax, ymax, edgeRatio, width, height];
+    return [X, Y, ZGenes, genes, xmax, ymax, edgeRatio, width, height];
 };
 
 function reloadPage() {
@@ -135,29 +85,31 @@ function reloadPage() {
     // document.getElementById('btn-coordinates-hidden').scrollIntoView();
     location.reload();
 };
+
 function main() {
 
     {
         var genes = [];
-        var allTissues = [];
-        var allSpecies = [];
-        var signatureContent = [];
         var clusterLabels;
         var signatureMatrix;
+
+        var coordinatesLoaded = false;
+        var signaturesLoaded = false;
 
         var X;          // mRNA x coordinates
         var Y;          // mRNA y coordinates
         var ZGenes;     // gene information
         var xmax;       // highest coordinate
         var ymax;       // lowest coordinate
-        var sigma = 1;    // KDE kernel width
+        var sigma = 1;   // KDE kernel width
 
-        var height = 300; // vf height (pixels)
-        var width;      // vf width (pixels)
+        var height = 500;         // vf height (pixels)
+        var width = 0;      // vf width (pixels)
         var edgeRatio = 1;// radion height/width
-        var threshold = 10;
+        var threshold = 2;     // cell/ecm cutoff
         var vf;         // tensor vectorfield
         var vfNorm;     // tensor vfNorm
+        var scale = 1;
 
         var parameterWindow = [250, 250];
         var parameterWidth = 50;
@@ -166,200 +118,278 @@ function main() {
         var parameterZ = [];
         var vfParameter;
         var vfNormParameter;
-
         var pointerCoordinates = parameterWindow;
 
         function getClusterLabel(i) {
             return clusterLabels[i];
         }
+
     }
 
 
     async function importSignatures(path) {
 
-        // console.log('loading signatures');
+        console.log('loading signatures');
         document.getElementById("signature-loader").style.display = "block";   //display waiting symbol
+
 
         var fileToLoad = document.getElementById("btn-signatures-hidden").files[0];
 
         [signatureMatrix, clusterLabels, genes] = (processSignatures(await readFileAsync(fileToLoad)));
-
+        setVfSizeIndicator(width, height, genes);
 
         plotSignatures('signatures-preview', genes, clusterLabels, signatureMatrix.arraySync()).then(function () {
             document.getElementById("signature-loader").style.display = "none";
         });
 
+        signaturesLoaded = true;
+        $('#errSign').remove();
 
     };
 
-
-    async function downloadSignatures(current_genes) {
-
-
-        $.ajax({
-            type: "POST",
-            url: "http://127.0.0.1:5000/genes",
-            contentType: "application/json",
-            data: JSON.stringify({ "genes": current_genes }),
-            dataType: "json",
-            success: function (data) {
-                console.log('downloaded...');
-                current_genes;
-                signatureContent = (processDownloadedSignatures(data));
-                // console.log(signatureContent);
-                createTableHeader(current_genes, allTissues, allSpecies);
-                updateTable(signatureContent, allTissues, allSpecies);
-                [signatureMatrix, clusterLabels] = createSignatureMatrix(data, current_genes);
-                //console.log(signatureMatrix);
-            },
-            error: function (err) {
-                // console.log(err);
-                return (err);
-            }
-        });
-
-
-    }
-    function processDownloadedSignatures(data) {
-        allTissues = [];
-        allSpecies = [];
-        signatureContent = []
-
-        for (var i = 0; i < data.length; i++) {
-            entry = data[i];
-
-            [cellType, tissueType, species] = (data[i]).tissue.split('|');
-            // console.log(tissueType, allTissues)
-            if (!allTissues.includes(tissueType)) { allTissues.push(tissueType) };
-            if (!allSpecies.includes(species)) { allSpecies.push(species) };
-
-            entry.label = (data[i]).tissue;
-            entry.tissue = tissueType;
-            entry.celltype = cellType;
-            entry.species = species;
-            entry.checked = true;
-            entry.visible = true;
-            signatureContent.push(entry);
-        }
-
-        return signatureContent;
-    }
-
-    function createTableHeader(genes, tissues, species) {
-        var header = document.getElementById('sheet-header')
-        // row = header.insertRow(-1);
-        typeCell = header.insertCell(0);
-
-        typeCell = header.insertCell(1);
-        typeCell.innerHTML = "Cell Type";
-        typeCell.classList.add('header-cell');
-
-        tissueCell = header.insertCell(2);
-        tissueCell.innerHTML = "Tissue"
-        tissueCell.classList.add('header-cell');
-
-        var selTissue = document.createElement("select");
-        selTissue.id = "tissueSelect"
-        selTissue.classList.add('selectpicker')
-        selTissue.setAttribute('multiple', '');
-        selTissue.onchange = updateSignatureContent
-
-        for (var i = 0; i < tissues.length; i++) {
-            //Add the options
-            // console.log(selTissue);
-            selTissue.options[selTissue.options.length] = new Option(tissues[i]);
-        }
-        tissueCell.appendChild(selTissue);
-
-        speciesCell = header.insertCell(3);
-        speciesCell.innerHTML = "Species"
-        speciesCell.classList.add('header-cell');
-
-
-        var selSpecies = document.createElement("select");
-        selSpecies.id = "speciesSelect"
-        selSpecies.classList.add('selectpicker')
-        selSpecies.setAttribute('multiple', '');
-        selSpecies.onchange = updateSignatureContent
-
-        for (var i = 0; i < species.length; i++) {
-            //Add the options
-            // console.log(selSpecies);
-            selSpecies.options[selSpecies.options.length] = new Option(species[i]);
-        }
-        speciesCell.appendChild(selSpecies)
-
-        // console.log(genes);
-        for (var g = 0; g < genes.length; g++) {
-            cell = header.insertCell(g + 4);
-            cell.innerHTML = genes[g]
-            cell.classList.add('header-cell');
-            cell.classList.add('rotate');
-        }
-
-        $('select').selectpicker();
-        $("#tissueSelect").selectpicker('val', tissues[0])
-        $("#speciesSelect").selectpicker('val', species[0])
-
-    }
-
-
-    function updateSignatureContent(event) {
-        markedTissues = ($("#tissueSelect").val());
-        markedSpecies = ($("#speciesSelect").val());
-        if (markedTissues != null & markedSpecies != null) {
-
-            for (var i = 0; i < signatureContent.length; i++) {
-                // console.log(signatureContent[i]);
-                if ((markedSpecies.includes((signatureContent[i]).species)) &
-                    (markedTissues.includes((signatureContent[i]).tissue))) {
-                    (signatureContent[i]).visible = true;
-                }
-                else {
-                    (signatureContent[i]).visible = false;
-                    (signatureContent[i]).checked = true;
-                }
-            }
-            updateTable(signatureContent);
-
-            [signatureMatrix, clusterLabels] = createSignatureMatrix(signatureContent, genes)
-        }
-    }
-
-    function onlyUnique(value, index, self) {
-        return self.indexOf(value) === index;
-    }
-
     async function importCoordinates(path) {
+        $('#errCoords').remove();
 
-        // console.log(ZGenes);
-        // console.log('loading coordinates');
+        vf = null;
+        X = [];        // mRNA x coordinates
+        Y = [];          // mRNA y coordinates
+        ZGenes = [];     // gene information
+        xmax = [];       // highest coordinate
+        ymax = [];       // lowest coordinate
+
+        console.log(ZGenes);
+        console.log('loading coordinates');
         document.getElementById("coordinate-loader").style.display = "block";   //display waiting symbol
 
         var fileToLoad = document.getElementById("btn-coordinates-hidden").files[0];
 
-        [X, Y, ZGenes, genes, xmax, ymax, edgeRatio, width, height] = processCoordinates(await readFileAsync(fileToLoad));
-        // console.log(genes);
 
-        // var current_genes = ZGenes.filter(onlyUnique);
-
-        downloadSignatures(genes);
+        [X, Y, ZGenes, coordGenes, xmax, ymax, edgeRatio, width, height] = processCoordinates(await readFileAsync(fileToLoad));
+        if (!genes.length) genes = coordGenes; //use genes from the coordinate file for now, e.g. kde
 
         edgeRatio = xmax / ymax;
         width = Math.ceil(height * edgeRatio);
-        console.log('plotting...');
-        plotCoordinates('coordinates-preview', X, Y, ZGenes).then(function () {
+        setVfSizeIndicator(width, height, genes);
+
+        plotCoordinates('coordinates-preview', X, Y, ZGenes, { 'showlegend': true, }).then(function () {
             document.getElementById("coordinate-loader").style.display = "none";
         });
+
+        coordinatesLoaded = true;
     };
+
+
+    function allowDrop(ev) {
+        ev.preventDefault();
+        console.log('kewl!')
+    }
+
+    function dropCoords(ev) {
+        ev.preventDefault();
+        let path = ev.dataTransfer.items[0].getAsFile()
+        importCoordinates(path)
+    }
+
+    function dropSignatures(ev) {
+        ev.preventDefault();
+        let path = ev.dataTransfer.items[0].getAsFile()
+        importSignatures(path)
+    }
+
+
+    function updateScale(event) {
+        let valOld = scale;
+        let val = event.srcElement.valueAsNumber;
+        if (val <= 0) {
+            val = 1;
+            event.srcElement.value = '-'
+        }
+        else {
+            scale = val;
+        }
+
+        rescale = valOld / val;
+        scale = val;
+
+        xmax = xmax * rescale;
+        ymax = ymax * rescale;
+
+        // xmax = xmax*rescale;
+        X = X.map(function (x) { return x * rescale; })
+        Y = Y.map(function (x) { return x * rescale; })
+
+        plotCoordinates('coordinates-preview', X, Y, ZGenes, { 'showlegend': true, });
+
+        console.log(rescale);
+
+    }
+
+
+    function updateVfNormScalebar(event) {
+
+
+        div = $('#vf-norm-preview')[0];
+
+        console.log(event["xaxis.autorange"]);
+
+        if (!event["xaxis.autorange"]) {
+
+            var xrange = event["xaxis.range"];
+            var yrange = event["yaxis.range"];
+
+        }
+        else {
+            var xrange = [0, width];
+            var yrange = [0, height];
+        }
+
+        starty = yrange[0] + (yrange[1] - yrange[0]) / 8
+        endy = yrange[0] + (yrange[1] - yrange[0]) / 7
+
+        umPerPx = xmax / width;
+
+        start = xrange[0] + (xrange[1] - xrange[0]) / 8
+        end = xrange[0] + (xrange[1] - xrange[0]) / 3
+        center = start + (end - start) / 2;
+
+        var length = (end - start) * umPerPx;
+        var decimals = Math.ceil(Math.log10(length)) - 1;
+        var inter = length / (Math.pow(10, decimals));
+
+        var lengthRound = Math.ceil(inter) * Math.pow(10, decimals);
+
+
+        end = start + lengthRound / umPerPx
+
+        text = lengthRound + " μm";
+
+        console.log(center, div.layout.shapes[0])
+
+        length = Math.ceil(Math.random() * 40);
+
+        var rect = div.layout.shapes[0];
+        rect.x0 = center - lengthRound / 2 / umPerPx * 1.1;
+        rect.x1 = center + lengthRound / 2 / umPerPx * 1.1;
+
+        var horizontal = div.layout.shapes[1];
+        horizontal.x0 = center - lengthRound / 2 / umPerPx;
+        horizontal.x1 = center + lengthRound / 2 / umPerPx;
+
+        var capLeft = div.layout.shapes[2];
+        capLeft.x0 = center - lengthRound / 2 / umPerPx;
+        capLeft.x1 = center - lengthRound / 2 / umPerPx;
+
+        var capRight = div.layout.shapes[3];
+        capRight.x0 = center + lengthRound / 2 / umPerPx;
+        capRight.x1 = center + lengthRound / 2 / umPerPx;
+
+        var textAnnot = div.layout.annotations[0];
+        textAnnot.x = center;
+        textAnnot.text = text;
+
+        layout = {
+            'shapes': [rect, horizontal, capLeft, capRight],
+            'annotations': [textAnnot]
+        }
+        Plotly.update('vf-norm-preview', {}, layout);
+    }
+
+
+
+    function updateCtMapScalebar(event) {
+
+        div = $('#celltypes-preview')[0];
+
+        console.log(event);
+        if (!event["xaxis.autorange"]) {
+
+            var xrange = [event["xaxis.range[0]"], event["xaxis.range[1]"]]
+            var yrange = [event["yaxis.range[0]"], event["yaxis.range[1]"]]
+
+        }
+        else {
+            var xrange = [0, width];
+            var yrange = [0, height];
+        }
+
+
+        starty = yrange[0] + (yrange[1] - yrange[0]) / 8
+        endy = yrange[0] + (yrange[1] - yrange[0]) / 7
+
+        umPerPx = xmax / width;
+
+        start = xrange[0] + (xrange[1] - xrange[0]) / 8
+        end = xrange[0] + (xrange[1] - xrange[0]) / 3
+        center = start + (end - start) / 2;
+
+        var length = (end - start) * umPerPx;
+        var decimals = Math.ceil(Math.log10(length)) - 1;
+        var inter = length / (Math.pow(10, decimals));
+
+        var lengthRound = Math.ceil(inter) * Math.pow(10, decimals);
+
+
+        end = start + lengthRound / umPerPx
+
+        text = lengthRound + " μm";
+
+        console.log(div.layout)
+
+        length = Math.ceil(Math.random() * 40);
+
+        var rect = div.layout.shapes[0];
+        rect.x0 = center - lengthRound / 2 / umPerPx * 1.1;
+        rect.x1 = center + lengthRound / 2 / umPerPx * 1.1;
+
+        var horizontal = div.layout.shapes[1];
+        horizontal.x0 = center - lengthRound / 2 / umPerPx;
+        horizontal.x1 = center + lengthRound / 2 / umPerPx;
+
+        var capLeft = div.layout.shapes[2];
+        capLeft.x0 = center - lengthRound / 2 / umPerPx;
+        capLeft.x1 = center - lengthRound / 2 / umPerPx;
+
+        var capRight = div.layout.shapes[3];
+        capRight.x0 = center + lengthRound / 2 / umPerPx;
+        capRight.x1 = center + lengthRound / 2 / umPerPx;
+
+        var textAnnot = div.layout.annotations[0];
+        textAnnot.x = center;
+        textAnnot.text = text;
+
+        layout = {
+            'shapes': [rect, horizontal, capLeft, capRight],
+            'annotations': [textAnnot]
+        }
+        Plotly.update('celltypes-preview', {}, layout);
+    }
+
+
 
     function runFullKDE() {
-        //[vf, vfNorm] = runKDE(X, Y, ZGenes, genes, xmax, ymax, sigma, width, height);
-        runFullKDEviaPOST()
-        //console.log(X)
-        //plotVfNorm('vf-norm-preview', vfNorm.arraySync());
-    };
+        $('#errCoords').remove();
+        $('#errVF').remove();
+        if (coordinatesLoaded) {
 
+            try {
+                $('#errMemory').remove();
+                runFullKDEviaPOST()
+                // [vf, vfNorm] = runKDE(X, Y, ZGenes, genes, xmax, ymax, sigma / xmax * height, width, height);
+
+                // umPerPx = xmax / width;
+
+                // plotVfNorm('vf-norm-preview', vfNorm.arraySync(), generateScalebar(width / 10, width / 3, umPerPx));
+                // document.getElementById('vf-norm-preview').on('plotly_relayout', updateVfNormScalebar);
+            }
+            catch (ex) {
+                printErr('#vf-norm-preview', 'errMemory', "Memory exceeded. Please use a smaller vector field size.")
+                console.log(ex);
+            }
+        }
+        else {
+            printErr('#vf-norm-preview', 'errCoords', "Please load a coordinate file first.")
+        }
+    };
     function runFullKDEviaPOST() {
         $(document).on({
             ajaxStart: function(){
@@ -378,9 +408,9 @@ function main() {
             paramGenes: genes,
             paramXmax: xmax,
             paramYmax: ymax,
-            paramSigma: sigma,
-            paramWidth: width,
-            paramHeight: height
+            paramSigma: sigma/xmax *height,
+            paramWidth: height,
+            paramHeight: width
         });
         //console.log(payload);
 
@@ -391,10 +421,10 @@ function main() {
             data: payload,
             dataType: "json",
             success: function (response) {
-                vfNorm=response.vfNorm;
                 vf=response.vfBuffer;
-                plotVfNorm('vf-norm-preview', tf.tensor(vfNorm).arraySync());
-                console.log(response.vfNorm);
+                umPerPx = xmax / width;
+                plotVfNorm('vf-norm-preview', tf.tensor(response.vfBuffer).sum(2).arraySync(), generateScalebar(width / 10, width / 3, umPerPx));
+                document.getElementById('vf-norm-preview').on('plotly_relayout', updateVfNormScalebar);
             },
             error: function (err) {
                 console.log(err);
@@ -403,33 +433,39 @@ function main() {
         
     };
 
+
     function runCelltypeAssignments() {
-        [signatureMatrix, clusterLabels] = createSignatureMatrix(signatureContent, genes);
-        celltypeMap = assignCelltypes(tf.tensor(vf), tf.tensor(vfNorm), signatureMatrix, threshold);
-        assignCelltypesviaPOST(vf, vfNorm, signatureMatrix, threshold)
-        plotCelltypeMap('celltypes-preview', celltypeMap.arraySync(), clusterLabels, getClusterLabel);
-
+        $('#errSign').remove();
+        $('#errVF').remove();
+        if (!signatureMatrix) {
+            printErr('#celltypes-preview', 'errSign', 'Please load a signature matrix first.');
+        }
+        else if (!vf) {
+            printErr('#celltypes-preview', 'errVF', 'Please run a KDE first.');
+        }
+        else {
+            runCelltypeAssignmentsviaPOST()
+        }
     };
-
-    function assignCelltypesviaPOST(vf, vfNorm, signatureMatrix, threshold){
-        // $(document).on({
-        //     ajaxStart: function(){
-        //         $("#vf-norm-load").show();
-        //         $("#vf-norm-preview").hide(); 
-        //     },
-        //     ajaxStop: function(){ 
-        //         $("#vf-norm-load").hide();
-        //         $("#vf-norm-preview").show();
-        //     }    
-        // });
+    function runCelltypeAssignmentsviaPOST() {
+        $(document).on({
+            ajaxStart: function(){
+                //console.log(arrSigMat);
+                $("celltypes-load").show();
+                $("celltypes-preview").hide(); 
+            },
+            ajaxStop: function(){ 
+                $("celltypes-load").hide();
+                $("celltypes-preview").show();
+            }    
+        });
+        
         payload = JSON.stringify({
-            paramVF: vf,
-            paramVFNorm: vfNorm,
-            paramZSigMat: signatureMatrix,
+            paramvf: vf,
+            paramSigMat: signatureMatrix.arraySync(),
             paramthreshold: threshold,
         });
-        //console.log(payload);
-
+    
         $.ajax({
             type: "POST",
             url: "/assignCelltypes",
@@ -437,57 +473,89 @@ function main() {
             data: payload,
             dataType: "json",
             success: function (response) {
-                celltypeMap=tf.tensor(response.vfNorm);
-                //plotCelltypeMap('celltypes-preview', celltypeMap.arraySync(), clusterLabels, getClusterLabel);
-                console.log(response.celltypeMap);
+                celltypeMap = tf.tensor(response.celltypeMap)
+                plotCelltypeMap('celltypes-preview', celltypeMap.arraySync(), clusterLabels, getClusterLabel, layout = generateScalebar(width / 10, width / 3, umPerPx));
+                umPerPx = xmax / width;
+                document.getElementById('celltypes-preview').on('plotly_relayout', updateCtMapScalebar);
             },
             error: function (err) {
                 console.log(err);
             }
         });
-    }
+        
+    };
+
+
 
     function updateVfShape() {
+        //togglePreviewGenerator();
+        $('#errMemory').remove();
         height = parseInt(document.getElementById('vf-width').value);
         width = Math.ceil(height * edgeRatio);
-        document.getElementById("vf-size-information").innerHTML =
-            "total size: (" + width + "," + height + "," + genes.length + "); " + Math.ceil(width * height * 32 * genes.length / 1024 ** 2) + " gB"
-        updateParameterVf();
+        setVfSizeIndicator(width, height, genes);
+        if (document.getElementById('preview-generator').style.display == 'block') {
+            //updateParameterVf();
+            updateParameterRectangle(pointerCoordinates, parameterWidth * xmax / width);
+        }
     };
 
     function updateSigma() {
+        //togglePreviewGenerator();
         sigma = parseFloat(document.getElementById('KDE-bandwidth').value);
-        updateParameterVf();
+        console.log(document.getElementById('preview-generator').style.display);
+
+        // if (document.getElementById('preview-generator').style.display == 'block') {
+        //     updateParameterVf();
+        // }
     };
 
     function updateThreshold() {
+        //togglePreviewGenerator();
         threshold = parseFloat(document.getElementById('threshold').value);
-        updateParameterCelltypes();
+        // if (document.getElementById('preview-generator').style.display == 'block') {
+        //     updateParameterCelltypes();
+        // }
     };
 
     function toggleParameterGenerator() {
-        var previewGenerator = document.getElementById('preview-generator');
+        // var previewLoader = document.getElementById('preview-loader');
+        // previewLoader.style.display = "block";
+        // var previewGenerator = document.getElementById('preview-generator');
+        // previewGenerator.style.display = "none";
+        // //previewLoader.style.display = 'block';
+        // setTimeout(function () {
+            var previewGenerator = document.getElementById('preview-generator');
+            if (previewGenerator.style.display == "none") {
+                displayParameterGenerator();
+                createParameterCoodinatesPlot();
+            } else if (document.getElementById("bar-parameters").innerHTML.includes("Refresh")) {
+                displayParameterGenerator();
+                createParameterCoodinatesPlot();
+            } else {
+                hideParameterGenerator();
+            }
+        //     var previewLoader = document.getElementById('preview-loader');
+        //     previewLoader.style.display = "none";
+        //     var previewGenerator = document.getElementById('preview-generator');
+        //     previewGenerator.style.display = "block";
+        // }, 0);
 
-        if (previewGenerator.style.display === "none") {
-            displayParameterGenerator();
-            createParameterCoodinatesPlot();
-        } else {
-            hideParameterGenerator();
-        }
 
     };
 
-
-
     function updateParameterCelltypes() {
         parameterCelltypeMap = assignCelltypes(vfParameter, vfNormParameter, signatureMatrix, threshold);
-        plotCelltypeMap('parameter-celltypes', parameterCelltypeMap.arraySync(), clusterLabels);
+        labelsShort = clusterLabels.map(function (e) {
+            return e.substring(0, 5) + '.';
+        });
+        console.log(labelsShort);
+        plotCelltypeMap('parameter-celltypes', parameterCelltypeMap.arraySync(), labelsShort);
     }
 
     function updateParameterVf() {
         [vfParameter, vfNormParameter] = runKDE(parameterX, parameterY, parameterZ,
             genes, parameterWidth * xmax / width * 2, parameterWidth * ymax / height * 2,
-            sigma, parameterWidth * 2, parameterWidth * 2);
+            sigma / xmax * height, parameterWidth * 2, parameterWidth * 2);
         plotVfNorm('parameter-vf', vfNormParameter.arraySync());
         updateParameterCelltypes();
     };
@@ -528,6 +596,7 @@ function main() {
                         color: 'rgba(255, 255, 255, 1)'
                     },
                 },],
+            'showlegend': false,
 
         }
 
@@ -537,32 +606,49 @@ function main() {
         document.getElementById('parameter-coordinates')
             .on('plotly_click', updateRectangle);
         updateParameterVf();
-    }
+    };
 
     function updatePointerCoordinates(eventData) {
+        togglePreviewGenerator()
         pointerCoordinates = [eventData.xvals[0], eventData.yvals[0]];
     };
 
     function updateRectangle(eventData) {
+        togglePreviewGenerator();
         updateParameterRectangle(pointerCoordinates, parameterWidth * xmax / width);
         parameterWindow = [Math.ceil(pointerCoordinates[1] / xmax * width),
         Math.ceil(pointerCoordinates[0] / xmax * width)];
         updateParameterCoordinates();
-        updateParameterVf();
-        console.log(pointerCoordinates);
+        //updateParameterVf();
+        // console.log(pointerCoordinates);
     };
+    function togglePreviewGenerator() {
+        // console.log('Hellow')
+        refreshParameterGenerator()
+    }
 
     function initiateButtons() {
-
 
         document.getElementById('btn-signatures-hidden')
             .addEventListener('change', importSignatures);
         document.getElementById('btn-coordinates-hidden')
             .addEventListener('change', importCoordinates);
+
+        document.getElementById('coordinates-dragzone')
+            .addEventListener("dragover", allowDrop);
+        document.getElementById('coordinates-dragzone')
+            .addEventListener("drop", dropCoords);
+        document.getElementById('signatures-dragzone')
+            .addEventListener("dragover", allowDrop);
+        document.getElementById('signatures-dragzone')
+            .addEventListener("drop", dropSignatures);
+
         document.getElementById('btn-KDE')
             .addEventListener('click', runFullKDE);
         document.getElementById('btn-types')
             .addEventListener('click', runCelltypeAssignments);
+        document.getElementById('btn-reload')
+            .addEventListener('click', reloadPage);
 
         document.getElementById('btn-parameters')
             .addEventListener('click', toggleParameterGenerator);
@@ -572,13 +658,31 @@ function main() {
             .addEventListener('change', updateSigma);
         document.getElementById('threshold')
             .addEventListener('change', updateThreshold);
+        //     .addEventListener("change", togglePreviewGenerator);
+        document.getElementById('exampleScale')
+            .addEventListener("change", updateScale);
         document.getElementById('button-tutorial')
             .addEventListener('click', runTutorial);
-        document.getElementById('btn-reload')
-            .addEventListener('click', reloadPage);
+        document.getElementById('vf-width')
+            .addEventListener("keypress", togglePreviewGenerator);
+        document.getElementById('KDE-bandwidth')
+            .addEventListener("keypress", togglePreviewGenerator);
+        document.getElementById('threshold')
+            .addEventListener("keypress", togglePreviewGenerator);
+
+        // Reset values @ page reload
+        document.getElementById('vf-width').value = 500;
+        document.getElementById('KDE-bandwidth').value = 1;
+        document.getElementById('threshold').value = 2;
 
     };
 
+    function initiateDataToggle() {
+        $('[data-toggle="KDE-bandwidth"]').tooltip();
+        $('[data-toggle="vf-width"]').tooltip();
+        $('[data-toggle="threshold"]').tooltip();
+    };
+    initiateDataToggle();
     initiateButtons();
 
 }

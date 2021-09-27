@@ -56,6 +56,7 @@ Zenodo (https://zenodo.org/record/5517607).
 ## License
 
 This project is licensed under the MIT License - for details please refer to the [LICENSE](./LICENSE) file.
+
 =======
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
