@@ -393,12 +393,12 @@ function main() {
     function runFullKDEviaPOST() {
         $(document).on({
             ajaxStart: function(){
-                $("#vf-norm-load").show();
-                $("#vf-norm-preview").hide(); 
+                document.getElementById("vf-norm-load").style.display='block';
+                document.getElementById("vf-norm-preview").style.display='none'; 
             },
             ajaxStop: function(){ 
-                $("#vf-norm-load").hide();
-                $("#vf-norm-preview").show();
+                document.getElementById("vf-norm-load").style.display='none';
+                document.getElementById("vf-norm-preview").style.display='block';
             }    
         });
         payload = JSON.stringify({
@@ -451,12 +451,12 @@ function main() {
         $(document).on({
             ajaxStart: function(){
                 //console.log(arrSigMat);
-                $("celltypes-load").show();
-                $("celltypes-preview").hide(); 
+                document.getElementById("celltypes-load").style.display='block';
+                document.getElementById("celltypes-preview").style.display='none';
             },
             ajaxStop: function(){ 
-                $("celltypes-load").hide();
-                $("celltypes-preview").show();
+                document.getElementById("celltypes-load").style.display='none';
+                document.getElementById("celltypes-preview").style.display='block';
             }    
         });
         
