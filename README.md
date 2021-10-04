@@ -1,7 +1,7 @@
 # SSAM-lite-server
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
-[![DOI:10.1101/2021.09.2x.xxxxxxxx](http://img.shields.io/badge/DOI-10.1101/2021.09.2x.xxxxxxxx-B31B1B.svg)](https://doi.org/10.1101/2021.09.2x.xxxxxxxx)
+[![DOI:10.1101/2021.09.29.462194](http://img.shields.io/badge/DOI-10.1101/2021.09.29.462194-B31B1B.svg)](https://doi.org/10.1101/2021.09.29.462194)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5517607.svg)](https://doi.org/10.5281/zenodo.5517607)
 
 ... is a lightweight implementation of the [SSAM framework](https://www.nature.com/articles/s41467-021-23807-4).
@@ -39,12 +39,10 @@ For a list of versions see the [releases](https://github.com/HiDiHlabs/ssam-lite
 
 ## Citations
 
-TODO update Citation when ready
-
-Sebastian Tiesmeyer, Shashwat Sahay, Niklas Mueller-Boetticher, Roland Eils, Sebastian Mackowiak, Naveed Ishaque.
+Sebastian Tiesmeyer, Shashwat Sahay, Niklas Müller-Bötticher, Roland Eils, Sebastian D. Mackowiak, Naveed Ishaque.
 2021.
-"[SSAM-lite: a light-weight web-based framework for analysis of spatially resolved transcriptomics data](https://biorxiv.org)"
-*bioRxiv*. doi: 10.1101/2021....
+"[SSAM-lite: a light-weight web app for rapid analysis of spatially resolved transcriptomics data](https://www.biorxiv.org/content/10.1101/2021.09.29.462194)"
+*bioRxiv*. doi: 10.1101/2021.09.29.462194
 
 
 ## Sample data
